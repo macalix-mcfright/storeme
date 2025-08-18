@@ -339,11 +339,12 @@
             } else {
                 content += files.map(f => {
                     const isImage = /\.(jpe?g|png|gif|bmp)$/i.test(f.filename);
+                    // DOWNLOAD FIX: Added download attribute to the <a> tag
                     return `<div class="card mb-2 flex justify-between items-center">
                         <p>${f.filename}</p>
                         <div class="flex items-center gap-2">
                             ${isImage ? `<button class="btn btn-sm btn-special" onclick="showImagePreview('${f.file_url}', '${f.filename}')">Preview</button>` : ''}
-                            <a href="${f.file_url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary">Download</a>
+                            <a href="${f.file_url}" download="${f.filename}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary">Download</a>
                             <button class="btn btn-sm btn-danger" onclick="deleteItem('files', ${f.id})">Delete</button>
                         </div>
                     </div>`
