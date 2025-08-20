@@ -41,8 +41,9 @@
                     <button id="auth-button" type="submit" class="w-full btn btn-primary">Login</button>
                 </form>
                 <p id="auth-error" class="text-red-400 text-center mt-4 hidden"></p>
-                <div class="text-center mt-6">
+                <div class="flex justify-between items-center mt-6">
                     <a href="#" id="auth-switch-link" class="text-blue-400 hover:underline">Don't have an account? Sign Up</a>
+                    <a href="#" id="help-link" class="text-cyan-400 hover:underline">Need help?</a>
                 </div>
             </div>
         </div>
@@ -74,7 +75,7 @@
 
     <script>
         // --- CONFIGURATION ---
-        // This MUST be the hardcoded Render URL for Netlify to work
+        // This is the HARDCODED version for your Netlify deployment
         const API_BASE_URL = 'https://storeme-web-app.onrender.com';
 
         // --- DOM ELEMENTS ---
@@ -84,6 +85,7 @@
         const authTitle = document.getElementById('auth-title');
         const authButton = document.getElementById('auth-button');
         const authSwitchLink = document.getElementById('auth-switch-link');
+        const helpLink = document.getElementById('help-link'); // FIX: Added helpLink definition
         const authError = document.getElementById('auth-error');
         const logoutButton = document.getElementById('logout-button');
         const tabsContainer = document.getElementById('tabs');
@@ -168,6 +170,21 @@
                 authError.textContent = 'Could not connect to the server.';
                 authError.classList.remove('hidden');
             }
+        }
+        
+        // FIX: Added showHelpModal function
+        function showHelpModal() {
+            const title = 'Help & Support';
+            const body = `
+                <p class="text-center">If you've forgotten your password or your subscription has expired, please contact the developer with your username.</p>
+                <div class="mt-4 text-center">
+                    <a href="mailto:samuerumcfear@gmail.com" class="text-blue-400 hover:underline">Email: samuerumcfear@gmail.com</a>
+                    <br>
+                    <a href="https://wa.me/639179751591" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:underline">WhatsApp: +639179751591</a>
+                </div>
+            `;
+            const footer = `<button class="btn btn-secondary" onclick="hideModal()">Close</button>`;
+            showModal(title, body, footer, 'md');
         }
 
         // --- TAB & CONTENT RENDERING ---
@@ -336,15 +353,15 @@
         function renderFiles(files) {
             let content = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">Files</h2><input type="file" id="file-upload" class="hidden"><button class="btn btn-primary gap-2" onclick="document.getElementById('file-upload').click()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Upload File</button></div>`;
             if (!files || files.length === 0) {
-                content += `<div class="text-center p-8 text-gray-500">No files found.</div>`;
+                content += `<div class="text-center p-8 text-gray-500">No items found.</div>`;
             } else {
                 content += files.map(f => {
                     const isImage = /\.(jpe?g|png|gif|bmp)$/i.test(f.filename);
                     return `<div class="card mb-2 flex justify-between items-center">
                         <p>${f.filename}</p>
                         <div class="flex items-center gap-2">
-                            ${isImage ? `<button class="btn btn-sm btn-special" onclick="showImagePreview('${f.file_url}', '${f.filename}')">Preview</button>` : ''}
-                            <a href="${f.file_url}" download="${f.filename}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary">Download</a>
+                            ${isImage ? `<button class="btn btn-sm btn-special" onclick="showImagePreview('${f.file_url}')">Preview</button>` : ''}
+                            <button class="btn btn-sm btn-secondary" onclick="downloadFile(${f.id}, '${f.filename}')">Download</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteItem('files', ${f.id})">Delete</button>
                         </div>
                     </div>`
@@ -573,11 +590,32 @@
             navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
         }
 
+        // NEW DOWNLOAD FUNCTION
+        async function downloadFile(fileId, filename) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/files/download/${fileId}`);
+                if (!response.ok) throw new Error('Download failed');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
         // --- EVENT LISTENERS ---
         authSwitchLink.addEventListener('click', switchAuthMode);
         authForm.addEventListener('submit', handleAuthSubmit);
         logoutButton.addEventListener('click', showAuthView);
         modal.backdrop.addEventListener('click', (e) => { if (e.target === modal.backdrop) hideModal(); });
+        helpLink.addEventListener('click', showHelpModal);
 
         // --- INITIALIZATION ---
         checkLoginState();
